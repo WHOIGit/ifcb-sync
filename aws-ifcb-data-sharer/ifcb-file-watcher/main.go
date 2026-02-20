@@ -2,9 +2,11 @@ package main
 
 import (
 	"bufio"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"log"
+	"net/http"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -17,6 +19,10 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/seqsense/s3sync"
 )
+
+type DataResponse struct {
+	Datasets []string `json:"datasets"`
+}
 
 func main() {
 	// set optional sync-only flag
@@ -49,9 +55,14 @@ func main() {
 		bucketName = "ifcb-data-sharer.files"
 	}
 
+	apiURL := os.Getenv("API_URL")
+	if apiURL == "" {
+		apiURL = "https://habon-ifcb.whoi.edu/api/list_datasets/"
+	}
+
 	// handle list function, return results and exit
 	if *listTimeSeries {
-		res := getDataSeriesList(awsRegion, bucketName, userName)
+		res := getDataSeriesList(userName, apiURL)
 		fmt.Println("Existing Time Series for user:", userName)
 		for _, value := range res {
 			fmt.Println(value)
@@ -327,37 +338,23 @@ func askForConfirmation(s string) bool {
 	}
 }
 
-// Get list of existing Time Series
-func getDataSeriesList(awsRegion, bucketName, userName string) []string {
-	// Create a new session using the default AWS profile or environment variables
-	sess, err := session.NewSession(&aws.Config{
-		Region: aws.String(awsRegion),
-	})
+func getDataSeriesList(userName string, apiURL string) []string {
+	url := apiURL + "hablab"
+
+	// 1. Fetch the data
+	resp, err := http.Get(url)
 	if err != nil {
-		fmt.Println(err)
+		log.Fatalf("Failed to reach API: %v", err)
+	}
+	defer resp.Body.Close()
+
+	// 2. Decode the JSON into our struct
+	var data DataResponse
+	if err := json.NewDecoder(resp.Body).Decode(&data); err != nil {
+		log.Fatalf("Failed to decode JSON: %v", err)
 	}
 
-	// Create S3 service client
-	svc := s3.New(sess)
+	fmt.Printf("Found %d datasets:\n", len(data.Datasets))
 
-	resp, err := svc.ListObjectsV2(&s3.ListObjectsV2Input{Bucket: aws.String(bucketName), Prefix: aws.String(userName + "/"), Delimiter: aws.String("/")})
-	if err != nil {
-		fmt.Println(err)
-	}
-
-	//fmt.Println(resp.CommonPrefixes)
-	//fmt.Println("Found", len(resp.Contents), "items in bucket", bucketName)
-
-	var datasetsSlice []string
-
-	for _, value := range resp.CommonPrefixes {
-		arrayOfString := strings.Split(aws.StringValue(value.Prefix), "/")
-		//fmt.Println("Array:", arrayOfString)
-		//fmt.Println(arrayOfString[1])
-		datasetsSlice = append(datasetsSlice, arrayOfString[1])
-
-	}
-	//datasetString := strings.Join(datasetsSlice, " ")
-	//fmt.Println(datasetString)
-	return datasetsSlice
+	return data.Datasets
 }
