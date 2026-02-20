@@ -36,8 +36,8 @@ for i in $datasets; do
     echo $dataset_formatted_title
     echo $user
     # add dataset to ifcbdb
-    echo "add dataset to ifcbdb"
-    docker exec $IFCBDB python manage.py createdataset -t "$dataset_formatted_title" $dataset_id
+    # echo "add dataset to ifcbdb"
+    # docker exec $IFCBDB python manage.py createdataset -t "$dataset_formatted_title" $dataset_id
 
     # set its data directory
     echo "set dataset's data directory"
