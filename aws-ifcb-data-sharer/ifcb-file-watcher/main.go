@@ -10,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"slices"
 	"strings"
 	"time"
 
@@ -72,22 +73,16 @@ func main() {
 
 	// optional check if times series exists
 	if *checkTimeSeries {
-		// returns true is time series exists
-		res := checkTimeSeriesExists(awsRegion, bucketName, userName, datasetName)
-		// fmt.Println("Check response", res)
+		// returns true is dataset exists
+		res := checkDatasetExists(userName, datasetName, apiURL)
+		fmt.Println("Check response", res)
 
 		// if this time series is new, confirm that user want to continue
 		if !res {
-			confirm := askForConfirmation("You are creating a new Time Series. Please confirm that you want to set up a new Time Series")
-			if confirm {
-				fmt.Println("Request confirmed.")
-				os.Exit(0)
-			} else {
-				fmt.Println("Request canceled.")
-				os.Exit(1)
-			}
+			fmt.Printf("Error. Dataset %s has not been created yet in your IFCB Dashboard account. Please login to the Dashboard and create the requested dataset first.", datasetName)
+			os.Exit(1)
 		}
-		fmt.Println("Existing Time Series. Start process")
+		fmt.Println("Existing Dataset. Start process")
 		os.Exit(0)
 	}
 
@@ -280,36 +275,18 @@ func UploadFileToS3(awsRegion, bucketName, filePath string, dirToWatch string, u
 	return nil
 }
 
-// Check if given Time Series name exists
-func checkTimeSeriesExists(awsRegion, bucketName, userName string, datasetName string) bool {
-	// Create a new session using the default AWS profile or environment variables
-	sess, err := session.NewSession(&aws.Config{
-		Region: aws.String(awsRegion),
-	})
-	if err != nil {
-		fmt.Println(err)
+// Check if given Dataset name exists
+func checkDatasetExists(userName string, datasetName string, apiURL string) bool {
+
+	res := getDataSeriesList(userName, apiURL)
+	fmt.Println("Response from API:", res)
+	exists := slices.Contains(res, datasetName)
+	fmt.Println("Does it exist?", exists)
+
+	if exists {
+		return exists
 	}
 
-	// Create S3 service client
-	svc := s3.New(sess)
-
-	resp, err := svc.ListObjectsV2(&s3.ListObjectsV2Input{Bucket: aws.String(bucketName), Prefix: aws.String(userName + "/"), Delimiter: aws.String("/")})
-	if err != nil {
-		fmt.Println(err)
-	}
-
-	//fmt.Println(resp.CommonPrefixes)
-	//fmt.Println("Found", len(resp.Contents), "items in bucket", bucketName)
-
-	for _, value := range resp.CommonPrefixes {
-		//fmt.Println("dataset:", datasetName)
-		tsExists := strings.Contains(aws.StringValue(value.Prefix), datasetName)
-		//fmt.Println("TS exists:", tsExists)
-		// return and break the loop if dataset found
-		if tsExists {
-			return tsExists
-		}
-	}
 	return false
 }
 
