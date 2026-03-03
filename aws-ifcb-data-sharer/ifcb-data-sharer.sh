@@ -24,8 +24,8 @@ fi
 
 #export AWS_PROFILE=ifcb-data-sharer
 # sync local directory with files in S3, delete any files that don't match as well
-#aws s3 sync $S3_BUCKET $LOCAL_FILE_DIR  \
-#    --delete --no-progress > clean_log.txt
+aws s3 sync $S3_BUCKET $LOCAL_FILE_DIR  \
+    --delete --no-progress > clean_log.txt
 
 # get a list of all local dataset names to run operations on 
 datasets=$(find $LOCAL_FILE_DIR -mindepth 2 -maxdepth 2 -type d  \( ! -iname ".*" \))

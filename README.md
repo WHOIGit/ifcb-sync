@@ -1,29 +1,42 @@
-# IFCB Data Sharer
+# IFCB Sync
 
-IFCB Data Sharer allows Imaging FlowCytobot ([IFCB](https://mclanelabs.com/imaging-flowcytobot/)) operator groups to share their data through an [IFCB dashboard](https://github.com/WHOIGit/ifcbdb.git) hosted at the Woods Hole Oceanographic Institution (https://habon-ifcb.whoi.edu). Depending on how it's invoked, the program either performs a one-time file synchronization or continuosly monitors a specified data directory, uploading any new files created within the directory to habon-ifcb.whoi.edu via an AWS data pipeline.
+IFCB Sync allows Imaging FlowCytobot ([IFCB](https://mclanelabs.com/imaging-flowcytobot/)) operator groups to share their data through an [IFCB dashboard](https://github.com/WHOIGit/ifcbdb.git) hosted at the Woods Hole Oceanographic Institution (https://habon-ifcb.whoi.edu). Depending on how it's invoked, the program either performs a one-time file synchronization or continuosly monitors a specified data directory, uploading any new files created within the directory to habon-ifcb.whoi.edu via an AWS data pipeline.
 
 ## Installation procedure
+
 IFCB Data Sharer can be installed either directly on an IFCB sensor running Debian Linux or on a separate server running Debian Linux, macOS, or Windows. The installation steps are almost identical across these operating systems. Differences are described within the sections below under the subheadings for each OS.
 
-### 1. Contact mbrosnahan@whoi.edu to request an account and receive access credentials
-### 2. Ensure that Git is installed on your host.   
+### 1. Contact mbrosnahan@whoi.edu to request a IFCB Dashboard account and receive access credentials.
+
+A new Team account will be created for you on WHOI HABlab's [IFCB Dashoard application](https://habon-ifcb.whoi.edu). This will allow you to manage your own IFCB data on the IFCB Dashboard by creating Datasets and adding Team Members. Before you use the ifcb-sync tool to add data from your IFCB host, make sure to first create the Dataset to receive the data in the IFCB Dashboard.
+
+You will also receive separeate AWS credentials for use with the ifcb-sync tool as described below.
+
+### 2. Ensure that Git is installed on your host.
 
 #### Linux
+
 In a terminal:
+
 ```
 sudo apt update
 sudo apt install git
 ```
+
 #### Mac
+
 Download and install Xcode through the [Mac App store](https://apps.apple.com/us/app/xcode)
 
 #### Windows
+
 Download and install [Git for Windows](https://git-scm.com/download/win). During installation, be sure to enable symbolic links.
 
 ### 3. Install the `ifcb-sync` script.
 
 #### IFCB sensor installation
+
 In a terminal:
+
 ```
 cd /home/ifcb
 git clone https://github.com/WHOIGit/ifcb-data-sharer.git
@@ -33,7 +46,9 @@ sudo ln -s /home/ifcb/ifcb-data-sharer/ifcb-sync /usr/local/bin/
 ```
 
 #### Linux and MacOS server installations
+
 In a terminal:
+
 ```
 INSTALLDIR=$(pwd)
 git clone https://github.com/WHOIGit/ifcb-data-sharer.git
@@ -43,21 +58,26 @@ sudo ln -s "$INSTALLDIR/ifcb-sync" /usr/local/bin/
 ```
 
 #### Windows server installation
-Open a terminal windown in `Git Bash` using 'as an Administrator' option. Right click icon in start menu > 'More' > 'Run as administrator'. 
+
+Open a terminal windown in `Git Bash` using 'as an Administrator' option. Right click icon in start menu > 'More' > 'Run as administrator'.
 In the terminal window:
+
 ```
 git clone https://github.com/WHOIGit/ifcb-data-sharer.git
 cd ifcb-data-sharer
 chmod +x ifcb-sync
 mkdir -p /usr/local/bin
 ```
-Create a Windows symlink for ifcb-sync. 
+
+Create a Windows symlink for ifcb-sync.
 Open and run `cmd.exe` as an administrator, then in the new terminal window:
+
 ```
 cd C:\Program Files\Git\usr\local\bin
 mklink ifcb-sync C:\path\to\ifcb-data-sharer\ifcb-sync
 ```
-where `C:\path\to\ifcb-data-sharer` is the location where this repo was cloned. Default is `C:\Users\USERNAME\ifcb-data-sharer`. 
+
+where `C:\path\to\ifcb-data-sharer` is the location where this repo was cloned. Default is `C:\Users\USERNAME\ifcb-data-sharer`.
 
 ### 4. Create a new `.env` file in the same directory. In a terminal, copy the example code from the `.env.example`. Use Git Bash terminal if installing on a Windows host.
 
@@ -96,15 +116,19 @@ The `ifcb-sync` script main commands:
 ## Live data sharing example:
 
 A member of group `hablab` deploys an IFCB and wants to publish its images through time series `nauset`. Their data are written to directory `/home/ifcb/ifcbdata/nauset_data` on their IFCB. They would start live data sharing through http://habon-ifcb.whoi.edu using command:
+
 ```
 ifcb-sync start /home/ifcb/ifcbdata/nauset_data nauset
 ```
+
 Images will be transferred through AWS and published at https://habon-ifcb.whoi.edu/hablab_nauset as sample data are written on the IFCB.
 
 Before the instrument is taken offline or used for creation of another dataset, they should stop `ifcb-sync` using command:
+
 ```
 ifcb-sync stop nauset
 ```
+
 Failure to stop `ifcb-sync` may cause future IFCB samples to be mistakenly added to the `nauset` time series.
 
 ## One-time sync option
@@ -112,7 +136,6 @@ Failure to stop `ifcb-sync` may cause future IFCB samples to be mistakenly added
 ### ifcb-sync sync <target_directory> <target_time_series>
 
 If you just need to upload or sync an existing group of data files in a directory, you can run the script in "sync-only" mode. This operation will end the program after the sync is complete. It will not monitor the directory for new files.
-
 
 ### Notes on data syncing
 
