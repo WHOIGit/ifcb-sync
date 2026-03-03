@@ -45,6 +45,12 @@ for i in $datasets; do
     echo "set dataset's data directory"
     docker exec $IFCBDB python manage.py adddirectory -k raw /data/primary/ifcb-data-sharer/$user/$dataset_id $dataset_id
 
+    # Add blobs path
+    docker exec $IFCBDB python manage.py adddirectory -k blobs -p 4 /data/products/blobs-v4 $dataset_id
+
+    # Add features path
+    docker exec $IFCBDB python manage.py adddirecnory -k features -p 4 /data/products/fea-v4/ $dataset_id
+
     # import metadata if exists
     #echo "import metadata if exists"
     #docker exec $IFCBDB python manage.py importmetadata /data/primary/ifcb-data-sharer/$user/$dataset_title/metadatafile.csv
