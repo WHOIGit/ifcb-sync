@@ -247,8 +247,17 @@ sync() {
         usage
         exit 1
     fi
-    ./$EXECUTABLE -check-time-series -sync-only "$target_dir" "$target_time_series" > ifcb-file-watcher-sync.log 2>&1 &
-    echo "Sync initiated for '$target_dir' and '$target_time_series'. Progress monitored in ifcb-file-watcher-sync.log"
+    
+    # Check if time series exists
+    ./$EXECUTABLE -check-time-series "$target_dir" "$target_time_series"
+    if [[ $? -eq 0 ]]; then
+        start_job=true
+    fi
+
+    if [[ "$start_job" == true  ]]; then
+        ./$EXECUTABLE -sync-only "$target_dir" "$target_time_series" > ifcb-file-watcher-sync.log 2>&1 &
+        echo "Sync initiated for '$target_dir' and '$target_time_series'. Progress monitored in ifcb-file-watcher-sync.log"
+    fi
 }
 
 list() {

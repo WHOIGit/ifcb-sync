@@ -68,21 +68,21 @@ func main() {
 		for _, value := range res {
 			fmt.Println(value)
 		}
+		fmt.Println(apiURL)
 		os.Exit(0)
 	}
 
-	// optional check if times series exists
+	// check if times series exists
 	if *checkTimeSeries {
 		// returns true is dataset exists
 		res := checkDatasetExists(userName, datasetName, apiURL)
-		fmt.Println("Check response", res)
 
 		// if this time series is new, confirm that user want to continue
 		if !res {
 			fmt.Printf("Error. Dataset %s has not been created yet in your IFCB Dashboard account. Please login to the Dashboard and create the requested dataset first.", datasetName)
 			os.Exit(1)
 		}
-		fmt.Println("Existing Dataset. Start process")
+		fmt.Println("Existing Dataset on IFCB Dashboard. Start process")
 		os.Exit(0)
 	}
 
@@ -279,9 +279,8 @@ func UploadFileToS3(awsRegion, bucketName, filePath string, dirToWatch string, u
 func checkDatasetExists(userName string, datasetName string, apiURL string) bool {
 
 	res := getDataSeriesList(userName, apiURL)
-	fmt.Println("Response from API:", res)
 	exists := slices.Contains(res, datasetName)
-	fmt.Println("Does it exist?", exists)
+	fmt.Println("Does datasert exist?", exists)
 
 	if exists {
 		return exists
@@ -316,7 +315,7 @@ func askForConfirmation(s string) bool {
 }
 
 func getDataSeriesList(userName string, apiURL string) []string {
-	url := apiURL + "hablab"
+	url := apiURL + userName
 
 	// 1. Fetch the data
 	resp, err := http.Get(url)
@@ -330,8 +329,6 @@ func getDataSeriesList(userName string, apiURL string) []string {
 	if err := json.NewDecoder(resp.Body).Decode(&data); err != nil {
 		log.Fatalf("Failed to decode JSON: %v", err)
 	}
-
-	fmt.Printf("Found %d datasets:\n", len(data.Datasets))
 
 	return data.Datasets
 }

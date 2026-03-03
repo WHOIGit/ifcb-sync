@@ -1,43 +1,81 @@
 #!/bin/bash
-export AWS_PROFILE=ifcb-data-sharer
+
+ENV_FILE=".env"
+
+# Check if the .env file exists
+if [ -f "$ENV_FILE" ]; then
+    # Enable automatic export of all subsequent assignments
+    set -o allexport
+    # Source the file to load variables into the current shell environment
+    source "$ENV_FILE"
+    # Disable automatic export
+    set +o allexport
+    echo "Environment variables loaded from $ENV_FILE"
+else
+    # default values to work on HABON IFCB
+    echo "$ENV_FILE not found. Set default vars"
+    API_LIST_URL="https://habon-ifcb.whoi.edu/api/list_datasets"
+    API_SYNC_URL="https://habon-ifcb.whoi.edu/api/sync_bin"
+    S3_BUCKET="s3://ifcb-data-sharer.files"
+    LOCAL_FILE_DIR="/opt/ifcbdb/ifcbdb/ifcb_data/primary/ifcb-data-sharer"
+    # Docker container name
+    IFCBDB="ifcbdb_ifcbdb_1"
+fi
+
+#export AWS_PROFILE=ifcb-data-sharer
 # sync local directory with files in S3, delete any files that don't match as well
-aws s3 sync s3://ifcb-data-sharer.files /opt/ifcbdb/ifcbdb/ifcb_data/primary/ifcb-data-sharer  \
-    --delete
+#aws s3 sync $S3_BUCKET $LOCAL_FILE_DIR  \
+#    --delete --no-progress > clean_log.txt
 
-# get a list of all dataset names to run operations on 
-datasets=$(find /opt/ifcbdb/ifcbdb/ifcb_data/primary/ifcb-data-sharer -mindepth 2 -maxdepth 2 -type d  \( ! -iname ".*" \))
+# get a list of all local dataset names to run operations on 
+datasets=$(find $LOCAL_FILE_DIR -mindepth 2 -maxdepth 2 -type d  \( ! -iname ".*" \))
 
-# ifcbdb instance name
-IFCBDB="ifcbdb_ifcbdb_1"
-
-# loop through datasets, split string to last element
+# loop through datasets, add data directory to IFCBDB
 for i in $datasets; do
+    echo $i
     # get user from directory string, second to last
-    user=$(echo "$i" | awk '{split($0,a,"/"); print a[8]}')
-    # split directory name into user and dataset title, concat to use as the unique id
-    dataset_id=$(echo "$i" | awk '{split($0,a,"/"); new_var=a[8]"_"a[9]; print new_var}')
+    user=$(echo "$i" | awk -F/ '{print $(NF-1)}')
     # use last directory string elemement for title
-    dataset_title=$(echo "$i" | awk -F\/ '{print $NF}')
-    # replace any underscores with space to format title
-    dataset_formatted_title=${dataset_title/"_"/" "}
+    dataset_id=$(echo "$i" | awk -F\/ '{print $NF}')
+
     echo $dataset_id
-    echo $dataset_title
-    echo $dataset_formatted_title
     echo $user
-    # add dataset to ifcbdb
-    echo "add dataset to ifcbdb"
-    docker exec $IFCBDB python manage.py createdataset -t "$dataset_formatted_title" $dataset_id
 
     # set its data directory
     echo "set dataset's data directory"
-    docker exec $IFCBDB python manage.py adddirectory -k raw /data/primary/ifcb-data-sharer/$user/$dataset_title $dataset_id
+    docker exec $IFCBDB python manage.py adddirectory -k raw $LOCAL_FILE_DIR/$user/$dataset_id $dataset_id
 
     # import metadata if exists
     #echo "import metadata if exists"
     #docker exec $IFCBDB python manage.py importmetadata /data/primary/ifcb-data-sharer/$user/$dataset_title/metadatafile.csv
-
-    # sync ifcb data
-    echo "sync ifcb data"
-    docker exec $IFCBDB python manage.py syncdataset $dataset_id
-
 done
+
+# get a list of all dataset names to run operations on from API
+# datasets=$(curl -s "$API_LIST_URL" | jq -r '.datasets')
+# readarray -t datasets_array < <(echo "$datasets" | jq -r '.[]')
+
+#for item in "${datasets_array[@]}"; do
+#    # set its data directory
+#    echo "set dataset's data directory"
+#    echo $item
+#    docker exec $IFCBDB python manage.py adddirectory -k raw /data/primary/ifcb-data-sharer/$user/$dataset_title $dataset_id
+#done
+
+while IFS= read -r line; do
+    # parse the AWS CLI output file string
+    # only sync if action is "download:"
+    action=$(echo "$line" | awk -F' ' '{print $1}')
+    echo "$action"
+    if [[ "$action" == "download:" ]]; then
+        echo "File downloaded, start sync process"
+        # use local file path to get dataset/team names
+        last_element="${line##* }"
+        echo "$last_element"
+        dataset_id=$(echo "$last_element" | awk -F'/' '{print $3}')
+        echo "$dataset_id"
+        bin_file=$(echo "$last_element" | awk -F\/ '{print $NF}')
+        bin=$(echo "$bin_file" | awk -F\. '{print $1}')
+        echo "$bin"
+        curl "$API_SYNC_URL?dataset=$dataset_id&bin=$bin"
+    fi
+done < "clean_log.txt"
