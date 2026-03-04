@@ -280,7 +280,7 @@ func checkDatasetExists(userName string, datasetName string, apiURL string) bool
 
 	res := getDataSeriesList(userName, apiURL)
 	exists := slices.Contains(res, datasetName)
-	fmt.Println("Does datasert exist?", exists)
+	// fmt.Println("Does datasert exist?", exists)
 
 	if exists {
 		return exists

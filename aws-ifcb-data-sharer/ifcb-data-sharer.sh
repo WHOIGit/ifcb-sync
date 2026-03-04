@@ -20,6 +20,8 @@ else
     LOCAL_FILE_DIR="/opt/ifcbdb/ifcbdb/ifcb_data/primary/ifcb-data-sharer"
     # Docker container name
     IFCBDB="ifcbdb_ifcbdb_1"
+    # Path in Docker container to data directory
+    DOCKER_PRIMARY_DATA_DIR="/data/primary/ifcb-data-sharer"
 fi
 
 #export AWS_PROFILE=ifcb-data-sharer
@@ -43,13 +45,15 @@ for i in $datasets; do
 
     # set its data directory
     echo "set dataset's data directory"
-    docker exec $IFCBDB python manage.py adddirectory -k raw /data/primary/ifcb-data-sharer/$user/$dataset_id $dataset_id
-
+    docker exec $IFCBDB python manage.py adddirectory -k raw $DOCKER_PRIMARY_DATA_DIR/$user/$dataset_id $dataset_id
+    
     # Add blobs path
+    echo "set dataset's blob directory"
     docker exec $IFCBDB python manage.py adddirectory -k blobs -p 4 /data/products/blobs-v4 $dataset_id
 
     # Add features path
-    docker exec $IFCBDB python manage.py adddirecnory -k features -p 4 /data/products/fea-v4/ $dataset_id
+    echo "set dataset's features directory"
+    docker exec $IFCBDB python manage.py adddirectory -k features -p 4 /data/products/fea-v4/ $dataset_id
 
     # import metadata if exists
     #echo "import metadata if exists"
