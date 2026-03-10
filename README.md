@@ -39,10 +39,10 @@ In a terminal:
 
 ```
 cd /home/ifcb
-git clone https://github.com/WHOIGit/ifcb-data-sharer.git
-cd ifcb-data-sharer
+git clone https://github.com/WHOIGit/ifcb-sync.git
+cd ifcb-sync
 chmod +x ifcb-sync
-sudo ln -s /home/ifcb/ifcb-data-sharer/ifcb-sync /usr/local/bin/
+sudo ln -s /home/ifcb/ifcb-sync/ifcb-sync /usr/local/bin/
 ```
 
 #### Linux and MacOS server installations
@@ -50,9 +50,9 @@ sudo ln -s /home/ifcb/ifcb-data-sharer/ifcb-sync /usr/local/bin/
 In a terminal:
 
 ```
+git clone https://github.com/WHOIGit/ifcb-sync.git
+cd ifcb-sync
 INSTALLDIR=$(pwd)
-git clone https://github.com/WHOIGit/ifcb-data-sharer.git
-cd ifcb-data-sharer
 chmod +x ifcb-sync
 sudo ln -s "$INSTALLDIR/ifcb-sync" /usr/local/bin/
 ```
@@ -63,8 +63,8 @@ Open a terminal windown in `Git Bash` using 'as an Administrator' option. Right 
 In the terminal window:
 
 ```
-git clone https://github.com/WHOIGit/ifcb-data-sharer.git
-cd ifcb-data-sharer
+git clone https://github.com/WHOIGit/ifcb-sync.git
+cd ifcb-sync
 chmod +x ifcb-sync
 mkdir -p /usr/local/bin
 ```
@@ -74,10 +74,10 @@ Open and run `cmd.exe` as an administrator, then in the new terminal window:
 
 ```
 cd C:\Program Files\Git\usr\local\bin
-mklink ifcb-sync C:\path\to\ifcb-data-sharer\ifcb-sync
+mklink ifcb-sync C:\path\to\ifcb-sync\ifcb-sync
 ```
 
-where `C:\path\to\ifcb-data-sharer` is the location where this repo was cloned. Default is `C:\Users\USERNAME\ifcb-data-sharer`.
+where `C:\path\to\ifcb-sync` is the location where this repo was cloned. Default is `C:\Users\USERNAME\ifcb-sync`.
 
 ### 4. Create a new `.env` file in the same directory. In a terminal, copy the example code from the `.env.example`. Use Git Bash terminal if installing on a Windows host.
 
@@ -103,7 +103,7 @@ The `ifcb-sync` script main commands:
 
 - <target_directory> - This is the absolute or relative path to the root of the data directory for the IFCB files: ex. `/home/ifcb/ifcbdata`
 
-- <target_time_series> - The name of the time series you want to add these files to on the IFCB Dashboard: `my-dataset`. The time series name is used to generate a url at https://habon-whoi.edu/<account_name>\_<target_time_series>. The name you choose should not include spaces and <account_name>\_<target_time_series> must be less than 64 characters long.
+- <target_time_series> - The name of the time series you want to add these files to on the IFCB Dashboard: `my-dataset`. The time series name must be created within the IFCB Dashboard at https://habon-ifcb.whoi.edu. Data will only be shared if <target_time_series> is associated with the installed USER_ACCOUNT. 
 
 ### ifcb-sync stop <target_directory|target_time_series>
 
@@ -121,7 +121,7 @@ A member of group `hablab` deploys an IFCB and wants to publish its images throu
 ifcb-sync start /home/ifcb/ifcbdata/nauset_data nauset
 ```
 
-Images will be transferred through AWS and published at https://habon-ifcb.whoi.edu/hablab_nauset as sample data are written on the IFCB.
+Images will be transferred through AWS and published at https://habon-ifcb.whoi.edu/nauset as sample bins are written to disk on the IFCB.
 
 Before the instrument is taken offline or used for creation of another dataset, they should stop `ifcb-sync` using command:
 
@@ -129,14 +129,14 @@ Before the instrument is taken offline or used for creation of another dataset, 
 ifcb-sync stop nauset
 ```
 
-Failure to stop `ifcb-sync` may cause future IFCB samples to be mistakenly added to the `nauset` time series.
+Failure to stop `ifcb-sync` may cause future IFCB samples to be added mistakenly to the `nauset` time series.
 
 ## One-time sync option
 
 ### ifcb-sync sync <target_directory> <target_time_series>
 
-If you just need to upload or sync an existing group of data files in a directory, you can run the script in "sync-only" mode. This operation will end the program after the sync is complete. It will not monitor the directory for new files.
+If you just need to upload or sync an existing group of data files in a directory, you can run the script in "one-time sync" mode. This operation will end the program after existing files are transferred the https://habon-ifcb.whoi.edu. It will not monitor the directory for new files.
 
-### Notes on data syncing
+### Notes on data transfers
 
-The data sync is a one-way sync from your IFCB device to WHOI's cloud storage. Files in the target directory **and its subdirectories** not already present in the cloud will be uploaded and synced to the specified time-series. However, if files are removed or deleted from the target directory on your local machine, these chagnes are not propgated to the time series on https://habon-ifcb.whoi.edu. Updates to the published time series need to be made through log into the IFCB dashboard website.
+IFCB data are transferred from your IFCB or data server to WHOI's cloud storage. Files in the target directory **and its subdirectories** not already present in the cloud will be uploaded and synced to the specified time-series. However, if files are removed or deleted from the target directory there ifcb-sync is running, these chagnes are not propgated to the time series on https://habon-ifcb.whoi.edu. Updates to the published time series need to be made by logging into the IFCB dashboard website and using Bin Management or Dataset Management tools available under Settings.
