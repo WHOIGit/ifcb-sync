@@ -81,7 +81,7 @@ while IFS= read -r line; do
         # use local file path to get dataset/team names
         last_element="${line##* }"
         echo "$last_element"
-        dataset_id=$(echo "$last_element" | awk -F'/' '{print $(NF-3)}')
+        dataset_id=$(echo "$last_element" | awk -F'/' '{print $4}')
         echo "$dataset_id"
         bin_file=$(echo "$last_element" | awk -F\/ '{print $NF}')
         bin=$(echo "$bin_file" | awk -F\. '{print $1}')

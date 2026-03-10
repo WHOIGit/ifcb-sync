@@ -39,8 +39,6 @@ Options:
   --restart
       Stop any existing instance of the job before starting a new one (used with 'start').
 
-  --force
-      Skip the confirmation check for creating a new time series (used with 'start').
 EOF
 }
 
@@ -247,7 +245,7 @@ sync() {
         usage
         exit 1
     fi
-    
+
     # Check if time series exists
     ./$EXECUTABLE -check-time-series "$target_dir" "$target_time_series"
     if [[ $? -eq 0 ]]; then
