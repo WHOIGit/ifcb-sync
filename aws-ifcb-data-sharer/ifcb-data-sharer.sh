@@ -24,7 +24,9 @@ else
     DOCKER_PRIMARY_DATA_DIR="/data/primary/ifcb-data-sharer"
 fi
 
-#export AWS_PROFILE=ifcb-data-sharer
+export AWS_PROFILE=ifcb-data-sharer
+
+echo "$(date)"
 # sync local directory with files in S3, delete any files that don't match as well
 aws s3 sync $S3_BUCKET $LOCAL_FILE_DIR  \
     --delete --no-progress > clean_log.txt
@@ -81,7 +83,8 @@ while IFS= read -r line; do
         # use local file path to get dataset/team names
         last_element="${line##* }"
         echo "$last_element"
-        dataset_id=$(echo "$last_element" | awk -F'/' '{print $4}')
+        # element is $4 on staging server
+        dataset_id=$(echo "$last_element" | awk -F'/' '{print $9}')
         echo "$dataset_id"
         bin_file=$(echo "$last_element" | awk -F\/ '{print $NF}')
         bin=$(echo "$bin_file" | awk -F\. '{print $1}')
