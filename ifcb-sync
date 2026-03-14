@@ -15,11 +15,17 @@ usage() {
     cat <<EOF
 Usage: $0 {start|status|stop|sync|list} [OPTIONS]
 
-Commands:
-  start <target_directory> <target_time_series> [--restart] [--force]
-      Start the Go executable as a background process. Use --restart to stop any existing instance. 
-      Use --force to skip the confirmation check for a new target series.
+Prerequisites:
+  - A .env file with team account info in the same directory as the 
+    ifcb-sync executable.
+  - [For 'Start' and 'Sync' functions] Create the target time series. 
+    This is completed through 'Dataset Management' at
+    https://habon-ifcb.whoi.edu [Requires login]
 
+Commands:
+  start <target_directory> <target_time_series> [--restart]
+      Start the Go executable as a background process. Use --restart to stop any existing instance. 
+      
   status
       List existing ifcb-file-watcher jobs
 
@@ -79,35 +85,6 @@ start() {
     local force_enabled=false
     local start_job=false
 
-    # Check for --force flag
-    for arg in "$@"; do
-        case $arg in
-            --force)
-            force_enabled=true
-            shift
-            ;;
-            *)
-            # unknown option
-            ;;
-        esac
-    done
-
-    # Check for invalid groupname prefix
-    if [[ "$target_time_series" == "${GROUPNAME}"* ]]; then
-        # Remove $GROUPNAME prefix with optional '_' or '-' after it
-        cleaned_ts="${target_time_series#${GROUPNAME}[-_]}"
-        cleaned_ts="${cleaned_ts#${GROUPNAME}}"  # In case no separator
-        echo "ERROR: Time series name cannot begin with groupid ('${GROUPNAME}'). Consider using '$cleaned_ts' rather than '$target_time_series'."
-        exit 1
-    fi
-
-    # Enforce max length of 64 characters for GROUPNAME_cleaned_ts
-    combined_name="${GROUPNAME}_${target_time_series}"
-    if (( ${#combined_name} > 64 )); then
-        echo "ERROR: Time series name exceeds the 64-character limit after addition of groupid ('${combined_name}': ${#combined_name} chars)."
-        exit 1
-    fi
-
     local restart_flag=$3
 
     if [[ -z "$target_dir" || -z "$target_time_series" ]]; then
@@ -149,16 +126,10 @@ start() {
     mkdir "$lock_path"
     echo $$ > "$lock_path/pid"
 
-     # if --force flag present, stop the confirmation check routine
-    if [ "$force_enabled" == true ]; then
+    ./$EXECUTABLE -check-time-series "$target_dir" "$target_time_series"
+    if [[ $? -eq 0 ]]; then
         start_job=true
-    else
-        ./$EXECUTABLE -check-time-series "$target_dir" "$target_time_series"
-        if [[ $? -eq 0 ]]; then
-            start_job=true
-        fi
     fi
-
     
     if [[ "$start_job" == true  ]]; then
         nohup $EXECUTABLE "$target_dir" "$target_time_series" > "ifcb-file-watcher-$job_id.log" 2>&1 &
@@ -225,20 +196,6 @@ stop() {
 sync() {
     local target_dir=$1
     local target_time_series=$2
-    # Check for invalid groupname_ prefix
-    if [[ "$target_time_series" == "${GROUPNAME}_"* ]]; then
-        cleaned_ts="${target_time_series#${GROUPNAME}[-_]}"
-        cleaned_ts="${cleaned_ts#${GROUPNAME}}"  # In case no separator
-        echo "ERROR: Time series name cannot begin with groupid ('${GROUPNAME}'). Consider using '$cleaned_ts' rather than '$target_time_series'."
-        exit 1
-    fi
-
-    # Enforce max length of 64 characters for GROUPNAME_cleaned_ts
-    combined_name="${GROUPNAME}_${target_time_series}"
-    if (( ${#combined_name} > 64 )); then
-        echo "ERROR: Time series name exceeds the 64-character limit after addition of groupid ('${combined_name}': ${#combined_name} chars)."
-        exit 1
-    fi
 
     if [[ -z "$target_dir" || -z "$target_time_series" ]]; then
         echo "Error: Missing required inputs for 'sync'."
