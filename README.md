@@ -2,6 +2,16 @@
 
 IFCB Sync allows Imaging FlowCytobot ([IFCB](https://mclanelabs.com/imaging-flowcytobot/)) operator groups to share their data through an [IFCB dashboard](https://github.com/WHOIGit/ifcbdb.git) hosted at the Woods Hole Oceanographic Institution (https://habon-ifcb.whoi.edu). Depending on how it's invoked, the program either performs a one-time file synchronization or continuosly monitors a specified data directory, uploading any new files created within the directory to habon-ifcb.whoi.edu via an AWS-based pipeline.
 
+## Table of Contents
+[Installation procedure](#installation-procedure)
+
+[How to use](#how-to-use)
+
+[Dataset creation in HABON IFCB dashboard](#dataset-creation-in-habon-ifcb-dashboard)
+
+[Data management in HABON IFCB dashboard](#data-management-in-habon-ifcb-dashboard)
+
+
 ## Installation procedure
 
 IFCB sync can be installed either directly on an IFCB sensor running Debian Linux or on a separate server running Debian Linux, macOS, or Windows. The installation steps are almost identical across these operating systems. Differences are described within the sections below under the subheadings for each OS.
@@ -146,3 +156,32 @@ If you just need to upload or sync an existing group of data files in a director
 ### Notes on data transfers
 
 IFCB data are transferred from your IFCB or data server to WHOI's cloud storage. Files in the target directory **and its subdirectories** not already present in the cloud will be uploaded and synced to the specified time-series. However, if files are removed or deleted from the target directory there ifcb-sync is running, these chagnes are not propgated to the time series on https://habon-ifcb.whoi.edu. Updates to the published time series need to be made by logging into the IFCB dashboard website and using Bin Management or Dataset Management tools available under Settings.
+
+## Dataset creation in HABON IFCB dashboard
+
+To transfer and display data on the HABON IFCB dashboard, users must create the <target_time_series> through the following steps:
+
+First, log into [HABON dashboard](https://habon-ifcb.whoi.edu/secure/login/) using your email address and password.
+![login page](ifcbdb_screenshots/login.png)
+
+Once logged in, a new menu called Settings will be revealed. Click Dataset Managment to view a list of previously created datasets.
+![ds list](ifcbdb_screenshots/ds_list.png)
+
+Next, click 'Add New Dataset' and enter details.
+![ds new](ifcbdb_screenshots/ds_new.png)
+
+The 'Name', 'Title', and 'Team' fields are required. 
+
+Name is used as a slug in unique URLs associated with the dataset. It cannot contain spaces but can contain special characters '-', '.', '_', and '~'. Name must also be unique. If a previously taken name is entered, it will be rejected when attempting to save the new dataset. 
+
+Title is a human-readable description of the dataset. This field can contain puncuation.
+
+'Team' should be assigned. In most cases, users will only have one Team available in the drop down menu.
+
+A fixed location or depth can be entered for the time series by scrolling to the bottom of the 'Add New Dataset' page and clicking the 'Set Fixed Location' button. 
+
+**The dataset is not created until the user clicks Save at the bottom of the Add New Dataset page.**
+![save new ds](ifcbdb_screenshots/ds_save.png)
+
+## Data management in HABON IFCB dashboard
+
