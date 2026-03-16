@@ -115,7 +115,7 @@ The `ifcb-sync` script main commands:
 
 - <target_time_series> - The name of the time series you want to add these files to on the IFCB Dashboard: `my-dataset`. 
 
-**IMPORTANT: The time series name must be created within the [IFCB Dashboard](https://habon-ifcb.whoi.edu) before you attempt 'start' or 'sync'.**
+**IMPORTANT: The time series name must be created within the [IFCB Dashboard](#dataset-creation-in-habon-ifcb-dashboard) before you attempt 'start' or 'sync'.**
 
 Data are only shared if <target_time_series> is associated with the installed USER_ACCOUNT. 
 
