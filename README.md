@@ -1,14 +1,14 @@
 # IFCB Sync
 
-IFCB Sync allows Imaging FlowCytobot ([IFCB](https://mclanelabs.com/imaging-flowcytobot/)) operator groups to share their data through an [IFCB dashboard](https://github.com/WHOIGit/ifcbdb.git) hosted at the Woods Hole Oceanographic Institution (https://habon-ifcb.whoi.edu). Depending on how it's invoked, the program either performs a one-time file synchronization or continuosly monitors a specified data directory, uploading any new files created within the directory to habon-ifcb.whoi.edu via an AWS data pipeline.
+IFCB Sync allows Imaging FlowCytobot ([IFCB](https://mclanelabs.com/imaging-flowcytobot/)) operator groups to share their data through an [IFCB dashboard](https://github.com/WHOIGit/ifcbdb.git) hosted at the Woods Hole Oceanographic Institution (https://habon-ifcb.whoi.edu). Depending on how it's invoked, the program either performs a one-time file synchronization or continuosly monitors a specified data directory, uploading any new files created within the directory to habon-ifcb.whoi.edu via an AWS-based pipeline.
 
 ## Installation procedure
 
-IFCB Data Sharer can be installed either directly on an IFCB sensor running Debian Linux or on a separate server running Debian Linux, macOS, or Windows. The installation steps are almost identical across these operating systems. Differences are described within the sections below under the subheadings for each OS.
+IFCB sync can be installed either directly on an IFCB sensor running Debian Linux or on a separate server running Debian Linux, macOS, or Windows. The installation steps are almost identical across these operating systems. Differences are described within the sections below under the subheadings for each OS.
 
 ### 1. Contact mbrosnahan@whoi.edu to request a IFCB Dashboard account and receive access credentials.
 
-A new Team account will be created for you on WHOI HABlab's [IFCB Dashoard application](https://habon-ifcb.whoi.edu). This will allow you to manage your own IFCB data on the IFCB Dashboard by creating Datasets and adding Team Members. Before you use the ifcb-sync tool to add data from your IFCB host, make sure to first create the Dataset to receive the data in the IFCB Dashboard.
+A new Team account will be created allowing members of your operator group to log into the [HABON IFCB dashboard](https://habon-ifcb.whoi.edu) where you can create new dataset endpoints, organize and move files between datasets, management team membership, and update sample metadata. 
 
 You will also receive separeate AWS credentials for use with the ifcb-sync tool as described below.
 
@@ -103,7 +103,11 @@ The `ifcb-sync` script main commands:
 
 - <target_directory> - This is the absolute or relative path to the root of the data directory for the IFCB files: ex. `/home/ifcb/ifcbdata`
 
-- <target_time_series> - The name of the time series you want to add these files to on the IFCB Dashboard: `my-dataset`. The time series name must be created within the IFCB Dashboard at https://habon-ifcb.whoi.edu. Data will only be shared if <target_time_series> is associated with the installed USER_ACCOUNT. 
+- <target_time_series> - The name of the time series you want to add these files to on the IFCB Dashboard: `my-dataset`. 
+
+**IMPORTANT: The time series name must be created within the [IFCB Dashboard](https://habon-ifcb.whoi.edu) before you attempt 'start' or 'sync'.**
+
+Data are only shared if <target_time_series> is associated with the installed USER_ACCOUNT. 
 
 ### ifcb-sync stop <target_directory|target_time_series>
 
@@ -115,7 +119,9 @@ The `ifcb-sync` script main commands:
 
 ## Live data sharing example:
 
-A member of group `hablab` deploys an IFCB and wants to publish its images through time series `nauset`. Their data are written to directory `/home/ifcb/ifcbdata/nauset_data` on their IFCB. They would start live data sharing through http://habon-ifcb.whoi.edu using command:
+A member of group `hablab` deploys an IFCB and wants to publish its images through time series `nauset`. Their data are written to directory `/home/ifcb/ifcbdata/nauset_data` on their IFCB. To start sharing lived data, they first confirm that `nauset` dataset has been created through the HABON IFCB dashboard either by going to the dashboard in a browser to confirm or using `ifcb-sync list`.
+
+Once confirmed, live data sharing is started using command:
 
 ```
 ifcb-sync start /home/ifcb/ifcbdata/nauset_data nauset
