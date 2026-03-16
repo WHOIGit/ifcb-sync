@@ -205,9 +205,7 @@ Users have the option of downloading a CSV file that lists each of the selected 
 
 ### Metadata modification
 
-To change metadata, users should open the CSV with a spreadsheet application. 
-
-Fields in columns `pid`, `ifcb`, and `n_images` are fixed and will not be modified in the IFCB dashboard database if altered. 
+To change metadata, users should open the CSV downloaded through 'Export Metadata' with a spreadsheet application. 
 
 Fields in columns `sample_time`, `ml_analyzed`, `latitude`, `longitude`,	`depth`,	`cruise`, `cast`,	`niskin`,	`sample_type`,	`tag1`, `comment_summary`, and `skip` may be changed. Acceptable entries for these fields are as follows:
 
@@ -226,7 +224,9 @@ Fields in columns `sample_time`, `ml_analyzed`, `latitude`, `longitude`,	`depth`
 | `comment_summary` | String | Intercalibration sample set | |
 | `skip` | Binary (0 or 1; default is 0) | 0 | Assign 1 to compromised samples (e.g., bad flow) |
 
-The user should save the updated spreadsheet in CSV format. They can then reupload the modified file by clicking the 'Upload Metadata' button at the bottom of the Bin Management page.
+Fields in columns `pid`, `ifcb`, and `n_images` are fixed and will not be modified in the IFCB dashboard database if altered. 
+
+The user should save the updated spreadsheet in CSV format. They may then transfer their updates to the dashboard by reupload the modified CSV file. To do this, click the 'Upload Metadata' button at the bottom of the Bin Management page or in the menu provided by clicking 'Settings'.
 ![upload metadata](ifcbdb_screenshots/upload.png)
 
 ### Dataset and `skip` assignment
