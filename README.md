@@ -3,7 +3,7 @@
 IFCB Sync allows Imaging FlowCytobot ([IFCB](https://mclanelabs.com/imaging-flowcytobot/)) operator groups to share their data through an [IFCB dashboard](https://github.com/WHOIGit/ifcbdb.git) hosted at the Woods Hole Oceanographic Institution (https://habon-ifcb.whoi.edu). Depending on how it's invoked, the program either performs a one-time file synchronization or continuosly monitors a specified data directory, uploading any new files created within the directory to habon-ifcb.whoi.edu via an AWS-based pipeline.
 
 ## Table of Contents
-[Installation procedure](#installation-procedure)
+[Installation](#installation)
 
 [How to use](#how-to-use)
 
@@ -12,7 +12,7 @@ IFCB Sync allows Imaging FlowCytobot ([IFCB](https://mclanelabs.com/imaging-flow
 [Data management in HABON IFCB dashboard](#data-management-in-habon-ifcb-dashboard)
 
 
-## Installation procedure
+## Installation
 
 IFCB sync can be installed either directly on an IFCB sensor running Debian Linux or on a separate server running Debian Linux, macOS, or Windows. The installation steps are almost identical across these operating systems. Differences are described within the sections below under the subheadings for each OS.
 
