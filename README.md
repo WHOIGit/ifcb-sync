@@ -52,7 +52,7 @@ cd /home/ifcb
 git clone https://github.com/WHOIGit/ifcb-sync.git
 cd ifcb-sync
 chmod +x ifcb-sync
-sudo ln -s /home/ifcb/ifcb-sync/ifcb-sync /usr/local/bin/
+sudo ln -sfn /home/ifcb/ifcb-sync/ifcb-sync /usr/local/bin/
 ```
 
 #### Linux and MacOS server installations
@@ -64,7 +64,7 @@ git clone https://github.com/WHOIGit/ifcb-sync.git
 cd ifcb-sync
 INSTALLDIR=$(pwd)
 chmod +x ifcb-sync
-sudo ln -s "$INSTALLDIR/ifcb-sync" /usr/local/bin/
+sudo ln -sfn "$INSTALLDIR/ifcb-sync" /usr/local/bin/
 ```
 
 #### Windows server installation
