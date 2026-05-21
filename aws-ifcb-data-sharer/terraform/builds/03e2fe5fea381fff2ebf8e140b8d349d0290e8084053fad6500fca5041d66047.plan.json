@@ -1,0 +1,1 @@
+{"filename": "builds/03e2fe5fea381fff2ebf8e140b8d349d0290e8084053fad6500fca5041d66047.zip", "runtime": "python3.12", "artifacts_dir": "builds", "build_plan": [[["zip", "../lambdas/zip-ifcb-files", null]]], "quiet": "true"}

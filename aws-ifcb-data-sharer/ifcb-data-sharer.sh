@@ -73,6 +73,28 @@ done
 #    docker exec $IFCBDB python manage.py adddirectory -k raw /data/primary/ifcb-data-sharer/$user/$dataset_title $dataset_id
 #done
 
+echo "Run redo_log loop"
+while [ -s redo_log.txt ]; do
+    # 1. Read the first line so we can remove if successful
+    line=$(head -n 1 redo_log.txt)
+    # process line
+    IFS='|' read -r  dataset_id bin <<< "$line"
+    echo "$dataset_id $bin"
+    file_number_check=$(find "$LOCAL_FILE_DIR" -type f -name "*$bin*" | wc -l)
+    echo "$file_number_check files found during redo"
+    if [ "$file_number_check" == 3 ]; then
+        echo "All files present. Sync bin"
+        url="$API_SYNC_URL?dataset=$dataset_id&bin=$bin"
+        echo "$url"
+        curl "$url"
+        # Remove the first line in-place
+        sed -i '1d' redo_log.txt
+    else
+        echo "Missing files. Skip sync and leave in redo log"
+    fi
+done
+
+echo "Run main sync loop"
 while IFS= read -r line; do
     # parse the AWS CLI output file string
     # only sync if action is "download:"
@@ -89,6 +111,16 @@ while IFS= read -r line; do
         bin_file=$(echo "$last_element" | awk -F\/ '{print $NF}')
         bin=$(echo "$bin_file" | awk -F\. '{print $1}')
         echo "$bin"
-        curl "$API_SYNC_URL?dataset=$dataset_id&bin=$bin"
+        file_number_check=$(find "$LOCAL_FILE_DIR" -type f -name "*$bin*" | wc -l)
+        echo "$file_number_check files found"
+        if [ "$file_number_check" == 3 ]; then
+           echo "All files present. Sync bin"
+           url="$API_SYNC_URL?dataset=$dataset_id&bin=$bin"
+           echo "$url"
+           curl "$url"
+        else
+           echo "Missing files. Skip sync and save to redo log"
+           echo "$dataset_id|$bin" >> redo_log.txt
+        fi
     fi
 done < "clean_log.txt"

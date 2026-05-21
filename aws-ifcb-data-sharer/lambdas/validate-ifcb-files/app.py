@@ -130,25 +130,28 @@ def lambda_handler(event, context):
                 print("file deleted")
 
         if file_extension == ".roi":
+            # check if file PID is valid
+            try:
+                # resp = parse(bin_pid)
+                print("valid ROI file.")
+                valid_file = True
+                dynamo_field = "hasRoi"
+            except Exception as e:
+                # invalid pid, delete file
+                print("validation error", e)
+                s3_client.delete_object(Bucket=s3_Bucket_Name, Key=s3_File_Name)
+                print("file deleted")
             # check if it's a binary data file
             mime_type = magic.from_file(tmp_file, mime=True)
+            print("ROI mime_type", mime_type)
+            """
             if mime_type == "application/octet-stream":
-                # check if file PID is valid
-                try:
-                    # resp = parse(bin_pid)
-                    print("valid ROI file.")
-                    valid_file = True
-                    dynamo_field = "hasRoi"
-                except Exception as e:
-                    # invalid pid, delete file
-                    print("validation error", e)
-                    s3_client.delete_object(Bucket=s3_Bucket_Name, Key=s3_File_Name)
-                    print("file deleted")
+               pass
             else:
                 print("INVALID ROI file.")
                 s3_client.delete_object(Bucket=s3_Bucket_Name, Key=s3_File_Name)
                 print("file deleted")
-
+            """
         # delete file from tmp dir
         print("remove tmp file")
         os.remove(tmp_file)
