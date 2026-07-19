@@ -9,7 +9,7 @@ Most automated workflows follow the sequence
 ```mermaid
 flowchart LR
     A[Discover datasets]
-    --> B[Retrieve sample metadata]
+    --> B[Retrieve bin metadata]
     --> C[Select bins]
     --> D[Retrieve images and derived products]
     --> E[External analysis]
@@ -25,7 +25,7 @@ Derived products such as classifier outputs and image feature matrices are curre
 
 ---
 
-# Discover datasets
+## Discover datasets
 
 List all public datasets
 
@@ -48,7 +48,7 @@ Subsequent API requests must use one of these dataset names.
 
 ---
 
-# Retrieve sample metadata
+## Retrieve bin metadata
 
 The primary API endpoint for discovering samples is
 
@@ -89,7 +89,7 @@ The `dataset` and `pid` fields returned by this endpoint are used to construct U
 
 ---
 
-# Filter by date
+## Filter by date
 
 Metadata queries may be restricted using
 
@@ -120,7 +120,7 @@ All times are interpreted as UTC and filtering is performed using the `sample_ti
 
 ---
 
-# Access individual images
+## Access individual images
 
 Each image within a bin has a stable URL. Image names are constructed by appending the ROI index number to the Bin ID. The ROI index number is represented as a five-digit, zero-padded integer. Complete image names are provided in class files as pid. In feature and ADC files, ROI index numbers (but not complete image names) are provided in the first column of data. 
 
@@ -147,7 +147,7 @@ https://habon-ifcb.whoi.edu/harpswell/D20210701T152144_IFCB124_06582.jpg
 
 ---
 
-# Access bin-level derived products
+## Access bin-level derived products
 
 Classifier outputs, features, and other derived products are currently published as **bin-level** files.
 
@@ -168,7 +168,7 @@ Because these products summarize an entire sample, they are retrieved using the 
 
 ---
 
-# Example workflow
+## Example workflow
 
 A common analysis workflow is
 
@@ -192,7 +192,7 @@ flowchart TD
 
 ---
 
-# Python example
+## Python example
 
 ```python
 import pandas as pd
@@ -215,7 +215,7 @@ for pid in meta["pid"]:
 
 ---
 
-# Additional URL routes
+## Additional URL routes
 
 Many additional Dashboard resources are available through predictable URL patterns.
 
