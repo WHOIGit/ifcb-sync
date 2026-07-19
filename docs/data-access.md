@@ -174,19 +174,14 @@ A common analysis workflow is
 
 ```mermaid
 flowchart TD
-    A[export_metadata]
-    --> B[PID list]
-
-    B --> C[Individual images]
-
+    A[export_metadata] --> B[PID list]
+    B --> C[Features.csv]
     B --> D[class_scores.csv]
-
-    B --> E[Feature vectors]
-
+    D --> E[Individual images]
+    D --> C
+    B --> E
     C --> F[Analysis]
-
     D --> F
-
     E --> F
 ```
 
