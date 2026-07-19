@@ -10,19 +10,15 @@ IFCB Dashboard organizes data hierarchically. In the Teams-enabled version used 
 
 ```mermaid
 flowchart TD
-    A[Team]
-    B[Dataset<br/>(time series)]
-    C[Bin<br/>(sample)]
-    D[Sample metadata]
-    E[Images (ROIs)]
-    F[Bin-level derived products]
 
-    A --> B
-    B --> C
-    C --> D
-    C --> E
-    C --> F
-```
+    A[Team] --> B["Dataset<br/>(time series)"] --> C["Bin<br/>(sample)"]
+
+    C --> D["Bin metadata"]
+
+    C --> E["Bin-level derived products"]
+
+    C --> F["Images (ROIs)"]
+```    
 
 ---
 
