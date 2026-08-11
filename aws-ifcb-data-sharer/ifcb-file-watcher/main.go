@@ -63,6 +63,9 @@ func main() {
 		apiURL = "https://habon-ifcb.whoi.edu/api/list_datasets/"
 	}
 
+	// optional comma-separated list of file extensions to restrict --sync-only to, e.g. ".adc,.hdr,.roi"
+	syncExtensions := parseExtensionFilter(os.Getenv("SYNC_FILE_EXTENSIONS"))
+
 	// handle list function, return results and exit
 	if *listTimeSeries {
 		res := getDataSeriesList(userName, apiURL)
@@ -98,7 +101,7 @@ func main() {
 		go func() {
 			for t := range ticker.C {
 				fmt.Println("received tick at", t)
-				uploadNewFiles(ctx, stampFile, awsRegion, bucketName, dirToWatch, userName, datasetName)
+				uploadNewFiles(ctx, stampFile, awsRegion, bucketName, dirToWatch, userName, datasetName, syncExtensions)
 			}
 		}()
 	}
@@ -106,29 +109,48 @@ func main() {
 	if *syncOnly {
 		// Sync any existing files to AWS
 
-		// --- NEW WAY (v2) ---
-		// Load the modern v2 configuration
-		cfg, err := config.LoadDefaultConfig(ctx, config.WithRegion("us-east-1"))
-		if err != nil {
-			log.Fatalf("unable to load SDK config, %v", err)
-		}
-
-		syncManager := s3sync.New(cfg)
-
 		// Sync from local to s3
 		if strings.HasSuffix(dirToWatch, "/") {
 			//fmt.Println("The string ends with a '/', slice it off")
 			dirToWatch = dirToWatch[:len(dirToWatch)-1]
 		}
 
-		bucketSyncPath := "s3://" + bucketName + "/" + userName + "/" + datasetName
-		fmt.Println("Sync from Dir:", dirToWatch)
-		fmt.Println("Sync to Bucket:", bucketSyncPath)
-		err = syncManager.Sync(ctx, dirToWatch, bucketSyncPath)
-		if err != nil {
-			panic(err)
+		if len(syncExtensions) == 0 {
+			// Load the modern v2 configuration
+			cfg, err := config.LoadDefaultConfig(ctx, config.WithRegion(awsRegion))
+			if err != nil {
+				log.Fatalf("unable to load SDK config, %v", err)
+			}
+
+			syncManager := s3sync.New(cfg)
+			bucketSyncPath := "s3://" + bucketName + "/" + userName + "/" + datasetName
+			fmt.Println("Sync from Dir:", dirToWatch)
+			fmt.Println("Sync to Bucket:", bucketSyncPath)
+			if err := syncManager.Sync(ctx, dirToWatch, bucketSyncPath); err != nil {
+				panic(err)
+			}
+			fmt.Println("Sync Complete", bucketSyncPath)
+		} else {
+			// s3sync has no filtering support, so walk and upload matching files individually
+			fmt.Println("Sync from Dir:", dirToWatch, "restricted to extensions:", syncExtensions)
+			err := filepath.Walk(dirToWatch, func(path string, fi os.FileInfo, err error) error {
+				if err != nil {
+					return err
+				}
+				if !fi.Mode().IsRegular() || !hasAllowedExtension(path, syncExtensions) {
+					return nil
+				}
+				fmt.Println(" →", path)
+				if err := UploadFileToS3(ctx, awsRegion, bucketName, path, dirToWatch, userName, datasetName); err != nil {
+					fmt.Println("Error uploading file:", path, err)
+				}
+				return nil
+			})
+			if err != nil {
+				log.Fatalf("walking source dir: %v", err)
+			}
+			fmt.Println("Sync Complete")
 		}
-		fmt.Println("Sync Complete", bucketSyncPath)
 		// exit the program if only syncing
 		os.Exit(0)
 	}
@@ -136,7 +158,7 @@ func main() {
 }
 
 // main file watcher function to run in a timed loop
-func uploadNewFiles(ctx context.Context, stampFile string, awsRegion, bucketName, dirToWatch string, userName string, datasetName string) {
+func uploadNewFiles(ctx context.Context, stampFile string, awsRegion, bucketName, dirToWatch string, userName string, datasetName string, allowedExtensions []string) {
 	// ensure stamp file exists
 	if _, err := os.Stat(stampFile); os.IsNotExist(err) {
 		// create with zero time or current time. we'll treat as current to avoid bulk first run.
@@ -164,7 +186,7 @@ func uploadNewFiles(ctx context.Context, stampFile string, awsRegion, bucketName
 		if err != nil {
 			return err
 		}
-		if fi.Mode().IsRegular() && fi.ModTime().After(lastRun) {
+		if fi.Mode().IsRegular() && fi.ModTime().After(lastRun) && hasAllowedExtension(path, allowedExtensions) {
 			toUpload = append(toUpload, path)
 		}
 		return nil
@@ -197,6 +219,28 @@ func uploadNewFiles(ctx context.Context, stampFile string, awsRegion, bucketName
 			log.Printf("Updated stamp to %v", now)
 		}
 	}
+}
+
+// parseExtensionFilter parses a comma-separated list of file extensions (e.g. "adc,.hdr, ROI")
+// into a normalized, lowercase, dot-prefixed slice (e.g. [".adc", ".hdr", ".roi"]).
+func parseExtensionFilter(raw string) []string {
+	var exts []string
+	for _, e := range strings.Split(raw, ",") {
+		e = strings.ToLower(strings.TrimSpace(e))
+		if e == "" {
+			continue
+		}
+		if !strings.HasPrefix(e, ".") {
+			e = "." + e
+		}
+		exts = append(exts, e)
+	}
+	return exts
+}
+
+func hasAllowedExtension(path string, exts []string) bool {
+	ext := strings.ToLower(filepath.Ext(path))
+	return len(exts) == 0 || slices.Contains(exts, ext)
 }
 
 func removeSpecialCharacters(str string) string {
