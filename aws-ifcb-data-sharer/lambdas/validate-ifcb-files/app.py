@@ -49,8 +49,8 @@ def lambda_handler(event, context):
         print("user", username)
         print("dataset", dataset)
 
-        if file_extension not in valid_extensions:
-            # delete file from S3 if not in whitelist
+        if file_extension not in valid_extensions or "/beads/" in s3_File_Name:
+            # delete file from S3 if not in whitelist or contain "/beads/" to eliminate test files
             s3_client.delete_object(Bucket=s3_Bucket_Name, Key=s3_File_Name)
             print("file deleted")
             return {

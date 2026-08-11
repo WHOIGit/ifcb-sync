@@ -74,9 +74,7 @@ done
 #done
 
 echo "Run redo_log loop"
-while [ -s redo_log.txt ]; do
-    # 1. Read the first line so we can remove if successful
-    line=$(head -n 1 redo_log.txt)
+while IFS= read -r line; do
     # process line
     IFS='|' read -r  dataset_id bin <<< "$line"
     echo "$dataset_id $bin"
@@ -90,9 +88,11 @@ while [ -s redo_log.txt ]; do
         # Remove the first line in-place
         sed -i '1d' redo_log.txt
     else
-        echo "Missing files. Skip sync and leave in redo log"
+        echo "Missing files. Skip sync and save to dead letter log"
+        echo "$dataset_id|$bin" >> dead_letter_log.txt
     fi
-done
+done < "redo_log.txt"
+truncate -s 0 redo_log.txt
 
 echo "Run main sync loop"
 while IFS= read -r line; do

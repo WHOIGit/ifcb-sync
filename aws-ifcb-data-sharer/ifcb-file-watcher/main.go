@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"context"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -14,11 +15,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/s3"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/joho/godotenv"
-	"github.com/seqsense/s3sync"
+	"github.com/seqsense/s3sync/v2"
 )
 
 type DataResponse struct {
@@ -26,6 +27,7 @@ type DataResponse struct {
 }
 
 func main() {
+	ctx := context.Background()
 	// set optional sync-only flag
 	syncOnly := flag.Bool("sync-only", false, "One time operation to only run the Sync operation on existing files")
 	// set optional check for existing times series name
@@ -96,23 +98,22 @@ func main() {
 		go func() {
 			for t := range ticker.C {
 				fmt.Println("received tick at", t)
-				uploadNewFiles(stampFile, awsRegion, bucketName, dirToWatch, userName, datasetName)
+				uploadNewFiles(ctx, stampFile, awsRegion, bucketName, dirToWatch, userName, datasetName)
 			}
 		}()
 	}
 
 	if *syncOnly {
 		// Sync any existing files to AWS
-		//
-		// Create a new session using the default AWS profile or environment variables
-		sess, err := session.NewSession(&aws.Config{
-			Region: aws.String(awsRegion),
-		})
+
+		// --- NEW WAY (v2) ---
+		// Load the modern v2 configuration
+		cfg, err := config.LoadDefaultConfig(ctx, config.WithRegion("us-east-1"))
 		if err != nil {
-			fmt.Println("error creating session:", err)
+			log.Fatalf("unable to load SDK config, %v", err)
 		}
 
-		syncManager := s3sync.New(sess)
+		syncManager := s3sync.New(cfg)
 
 		// Sync from local to s3
 		if strings.HasSuffix(dirToWatch, "/") {
@@ -123,7 +124,7 @@ func main() {
 		bucketSyncPath := "s3://" + bucketName + "/" + userName + "/" + datasetName
 		fmt.Println("Sync from Dir:", dirToWatch)
 		fmt.Println("Sync to Bucket:", bucketSyncPath)
-		err = syncManager.Sync(dirToWatch, bucketSyncPath)
+		err = syncManager.Sync(ctx, dirToWatch, bucketSyncPath)
 		if err != nil {
 			panic(err)
 		}
@@ -135,7 +136,7 @@ func main() {
 }
 
 // main file watcher function to run in a timed loop
-func uploadNewFiles(stampFile string, awsRegion, bucketName, dirToWatch string, userName string, datasetName string) {
+func uploadNewFiles(ctx context.Context, stampFile string, awsRegion, bucketName, dirToWatch string, userName string, datasetName string) {
 	// ensure stamp file exists
 	if _, err := os.Stat(stampFile); os.IsNotExist(err) {
 		// create with zero time or current time. we'll treat as current to avoid bulk first run.
@@ -181,7 +182,7 @@ func uploadNewFiles(stampFile string, awsRegion, bucketName, dirToWatch string, 
 		for _, file := range toUpload {
 			fmt.Println(" →", file)
 			// new file added, upload to AWS
-			err = UploadFileToS3(awsRegion, bucketName, file, dirToWatch, userName, datasetName)
+			err = UploadFileToS3(ctx, awsRegion, bucketName, file, dirToWatch, userName, datasetName)
 			if err != nil {
 				fmt.Println(nowUTC.Format("2006-01-02 15:04:05"), "Error uploading file:", err)
 			} else {
@@ -214,13 +215,10 @@ func removeSpecialCharacters(str string) string {
 }
 
 // UploadFileToS3 uploads a file to an S3 bucket
-func UploadFileToS3(awsRegion, bucketName, filePath string, dirToWatch string, userName string, datasetName string) error {
-	// Create a new session using the default AWS profile or environment variables
-	sess, err := session.NewSession(&aws.Config{
-		Region: aws.String(awsRegion),
-	})
+func UploadFileToS3(ctx context.Context, awsRegion, bucketName, filePath string, dirToWatch string, userName string, datasetName string) error {
+	cfg, err := config.LoadDefaultConfig(ctx, config.WithRegion(awsRegion))
 	if err != nil {
-		return fmt.Errorf("error creating session: %v", err)
+		return fmt.Errorf("unable to load SDK config: %v", err)
 	}
 
 	// Open the file
@@ -258,10 +256,10 @@ func UploadFileToS3(awsRegion, bucketName, filePath string, dirToWatch string, u
 	fmt.Println("S3 keyName:", keyName)
 
 	// Create S3 service client
-	svc := s3.New(sess)
+	svc := s3.NewFromConfig(cfg)
 
 	// Upload the file to S3
-	_, err = svc.PutObject(&s3.PutObjectInput{
+	_, err = svc.PutObject(ctx, &s3.PutObjectInput{
 		Bucket:        aws.String(bucketName),
 		Key:           aws.String(keyName),
 		Body:          file,
