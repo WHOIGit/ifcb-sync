@@ -66,6 +66,7 @@ func main() {
 	// optional comma-separated list of file extensions to restrict --sync-only to, e.g. ".adc,.hdr,.roi"
 	syncExtensions := parseExtensionFilter(os.Getenv("SYNC_FILE_EXTENSIONS"))
 
+	fmt.Println(syncExtensions)
 	// handle list function, return results and exit
 	if *listTimeSeries {
 		res := getDataSeriesList(userName, apiURL)
@@ -234,6 +235,10 @@ func parseExtensionFilter(raw string) []string {
 			e = "." + e
 		}
 		exts = append(exts, e)
+	}
+
+	if len(exts) == 0 {
+		exts = []string{".adc", ".hdr", ".roi"}
 	}
 	return exts
 }
