@@ -11,7 +11,7 @@ variable "bucket_name" {
 variable "user_names" {
   description = "Create IAM users with these names"
   type        = list(string)
-  default     = ["eandrews", "hablab", "aoos", "nwfsc", "bowdoin", "umaine", "unh", "vims", "fwri", "stonybrook", "tamu", "osu", "smhi", "laval", "bgsu", "sardi", "bigelow"]
+  default     = ["eandrews", "hablab", "aoos", "nwfsc", "bowdoin", "umaine", "unh", "vims", "fwri", "stonybrook", "tamu", "osu", "smhi", "laval", "bgsu", "sardi", "bigelow", "odu"]
 }
 
 variable "aws_account_id" {

@@ -12,6 +12,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"slices"
+	"strconv"
 	"strings"
 	"time"
 
@@ -62,6 +63,11 @@ func main() {
 	if apiURL == "" {
 		apiURL = "https://habon-ifcb.whoi.edu/api/list_datasets/"
 	}
+
+	// API_INSECURE_SKIP_VERIFY=true disables TLS certificate verification for
+	// the dataset API call (like `curl -k`). Defaults to false: certificates
+	// are verified against the OS roots plus the embedded Mozilla CA bundle.
+	apiClient = newAPIClient(parseBoolEnv("API_INSECURE_SKIP_VERIFY", false))
 
 	// optional comma-separated list of file extensions to restrict --sync-only to, e.g. ".adc,.hdr,.roi"
 	syncExtensions := parseExtensionFilter(os.Getenv("SYNC_FILE_EXTENSIONS"))
@@ -118,7 +124,7 @@ func main() {
 
 		if len(syncExtensions) == 0 {
 			// Load the modern v2 configuration
-			cfg, err := config.LoadDefaultConfig(ctx, config.WithRegion(awsRegion))
+			cfg, err := config.LoadDefaultConfig(ctx, config.WithRegion(awsRegion), withEmbeddedCAs())
 			if err != nil {
 				log.Fatalf("unable to load SDK config, %v", err)
 			}
@@ -265,7 +271,7 @@ func removeSpecialCharacters(str string) string {
 
 // UploadFileToS3 uploads a file to an S3 bucket
 func UploadFileToS3(ctx context.Context, awsRegion, bucketName, filePath string, dirToWatch string, userName string, datasetName string) error {
-	cfg, err := config.LoadDefaultConfig(ctx, config.WithRegion(awsRegion))
+	cfg, err := config.LoadDefaultConfig(ctx, config.WithRegion(awsRegion), withEmbeddedCAs())
 	if err != nil {
 		return fmt.Errorf("unable to load SDK config: %v", err)
 	}
@@ -361,11 +367,31 @@ func askForConfirmation(s string) bool {
 	}
 }
 
+// apiClient is the HTTP client used for the dataset API. It is configured in
+// main() from API_INSECURE_SKIP_VERIFY. AWS S3 traffic does not use it and
+// always verifies certificates (against the OS + embedded CA bundles).
+var apiClient *http.Client
+
+// parseBoolEnv returns the boolean value of an environment variable, or
+// defaultVal if it is unset or not a valid boolean (true/false/1/0/etc).
+func parseBoolEnv(name string, defaultVal bool) bool {
+	v := strings.TrimSpace(os.Getenv(name))
+	if v == "" {
+		return defaultVal
+	}
+	b, err := strconv.ParseBool(v)
+	if err != nil {
+		log.Printf("Invalid value %q for %s, using default %v", v, name, defaultVal)
+		return defaultVal
+	}
+	return b
+}
+
 func getDataSeriesList(userName string, apiURL string) []string {
 	url := apiURL + userName
 
 	// 1. Fetch the data
-	resp, err := http.Get(url)
+	resp, err := apiClient.Get(url)
 	if err != nil {
 		log.Fatalf("Failed to reach API: %v", err)
 	}
